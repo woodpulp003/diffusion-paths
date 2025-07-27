@@ -25,23 +25,24 @@ def print_menu():
     print("🏋️  TRAINING:")
     print("  1. Train simple dataset models")
     print("  2. Train complex dataset models")
+    print("  3. Train geodesic schedule model")
     print()
     print("📊 EVALUATION:")
-    print("  3. Evaluate simple dataset")
-    print("  4. Evaluate complex dataset")
+    print("  4. Evaluate simple dataset")
+    print("  5. Evaluate complex dataset")
     print()
     print("🔬 ANALYSIS:")
-    print("  5. Run geodesic analysis")
-    print("  6. Quick geodesic test")
+    print("  6. Run geodesic analysis")
+    print("  7. Quick geodesic test")
     print()
     print("📈 VISUALIZATION:")
-    print("  7. Create epoch distribution plots")
-    print("  8. Create side-by-side comparisons")
-    print("  9. Generate evaluation summary")
+    print("  8. Create epoch distribution plots")
+    print("  9. Create side-by-side comparisons")
+    print("  10. Generate evaluation summary")
     print()
     print("📚 DOCUMENTATION:")
-    print("  10. Show project structure")
-    print("  11. Show results summary")
+    print("  11. Show project structure")
+    print("  12. Show results summary")
     print()
     print("0. Exit")
     print()
@@ -133,7 +134,7 @@ def main():
         print_menu()
         
         try:
-            choice = input("Enter your choice (0-11): ").strip()
+            choice = input("Enter your choice (0-12): ").strip()
             
             if choice == "0":
                 print("\n👋 Goodbye!")
@@ -145,32 +146,35 @@ def main():
                 run_command("python scripts/training/train_complex_dataset.py", 
                           "Training complex dataset models")
             elif choice == "3":
+                run_command("python scripts/training/train_geodesic.py", 
+                          "Training geodesic schedule model")
+            elif choice == "4":
                 run_command("python scripts/evaluation/test_model.py", 
                           "Evaluating simple dataset")
-            elif choice == "4":
+            elif choice == "5":
                 run_command("python scripts/evaluation/test_complex_model.py", 
                           "Evaluating complex dataset")
-            elif choice == "5":
+            elif choice == "6":
                 run_command("python scripts/analysis/complex_geodesic_analysis.py", 
                           "Running geodesic analysis")
-            elif choice == "6":
+            elif choice == "7":
                 run_command("python scripts/analysis/quick_geodesic_test.py", 
                           "Running quick geodesic test")
-            elif choice == "7":
+            elif choice == "8":
                 run_command("python scripts/visualization/create_complex_epoch_distributions.py", 
                           "Creating epoch distribution plots")
-            elif choice == "8":
+            elif choice == "9":
                 run_command("python scripts/visualization/create_complex_side_by_side_plots.py", 
                           "Creating side-by-side comparisons")
-            elif choice == "9":
+            elif choice == "10":
                 run_command("python scripts/visualization/complex_evaluation_summary.py", 
                           "Generating evaluation summary")
-            elif choice == "10":
-                show_project_structure()
             elif choice == "11":
+                show_project_structure()
+            elif choice == "12":
                 show_results_summary()
             else:
-                print("❌ Invalid choice. Please enter a number between 0-11.")
+                print("❌ Invalid choice. Please enter a number between 0-12.")
                 
         except KeyboardInterrupt:
             print("\n\n👋 Goodbye!")

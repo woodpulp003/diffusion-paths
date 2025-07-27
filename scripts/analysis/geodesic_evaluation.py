@@ -34,6 +34,19 @@ def get_exponential_beta_schedule(T: int, beta_start: float = 1e-4, beta_end: fl
     """Exponential beta schedule for diffusion process."""
     return torch.exp(torch.linspace(np.log(beta_start), np.log(beta_end), T))
 
+def get_w2_geodesic_beta_schedule(T: int, eps: float = 1e-4) -> torch.Tensor:
+    """
+    Constructs a beta schedule such that the marginal std follows the Wasserstein-2 geodesic 
+    from N(0, eps^2 I) to N(0, I).
+    
+    The marginal std at time t is: sigma_t = sqrt((1 - t)^2 * eps^2 + t^2)
+    Then convert to alphas and betas.
+    """
+    t_vals = torch.linspace(0, 1, T)
+    sigma_t = torch.sqrt((1 - t_vals)**2 * eps**2 + t_vals**2)
+    alpha_t = 1 / (1 + sigma_t**2)
+    beta_t = 1 - alpha_t
+    return beta_t
 
 def get_beta_schedule(T: int, schedule_type: str = "linear", beta_start: float = 1e-4, beta_end: float = 0.02) -> torch.Tensor:
     """Get beta schedule based on the specified type."""
@@ -45,6 +58,8 @@ def get_beta_schedule(T: int, schedule_type: str = "linear", beta_start: float =
         return get_quadratic_beta_schedule(T, beta_start, beta_end)
     elif schedule_type == "exponential":
         return get_exponential_beta_schedule(T, beta_start, beta_end)
+    elif schedule_type == "geodesic":
+        return get_w2_geodesic_beta_schedule(T, eps=beta_start)
     else:
         raise ValueError(f"Unknown schedule type: {schedule_type}")
 

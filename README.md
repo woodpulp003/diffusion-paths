@@ -125,6 +125,7 @@ python scripts/visualization/create_complex_side_by_side_plots.py
 - **Cosine**: `β_t = β_start + (β_end - β_start) * (1 - cos(πt/2T))`
 - **Quadratic**: `β_t = β_start + (β_end - β_start) * (t/T)²`
 - **Exponential**: `β_t = β_start + (β_end - β_start) * (exp(t/T) - 1)/(e - 1)`
+- **Geodesic**: `σ_t = √((1-t)² * ε² + t²)`, then convert to β_t
 
 ### Evaluation Parameters
 - **Timesteps**: 1000
