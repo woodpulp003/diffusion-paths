@@ -39,7 +39,6 @@ checkpoints_large_batch/
 *.pth
 
 # Test results and visualizations
-test_results/
 test_results_large_batch/
 *.png
 *.jpg
