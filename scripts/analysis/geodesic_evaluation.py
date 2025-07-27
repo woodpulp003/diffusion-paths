@@ -39,15 +39,41 @@ def get_w2_geodesic_beta_schedule(T: int, eps: float = 1e-4) -> torch.Tensor:
     Constructs a beta schedule such that the marginal std follows the Wasserstein-2 geodesic 
     from N(0, eps^2 I) to N(0, I).
     
-    The marginal std at time t is: sigma_t = sqrt((1 - t)^2 * eps^2 + t^2)
-    Then convert to alphas and betas.
+    The marginal std at time t is: sigma_t = (1 - t) * eps + t
+    We want sqrt(1 - alpha_bar_t) = sigma_t
+    So: alpha_bar_t = 1 - sigma_t^2
     """
     t_vals = torch.linspace(0, 1, T)
-    sigma_t = torch.sqrt((1 - t_vals)**2 * eps**2 + t_vals**2)
-    alpha_t = 1 / (1 + sigma_t**2)
-    beta_t = 1 - alpha_t
-    return beta_t
-
+    
+    # Theoretical W₂ geodesic path
+    sigma_t = (1 - t_vals) * eps + t_vals
+    
+    # We want sqrt(1 - alpha_bar_t) = sigma_t
+    # So: alpha_bar_t = 1 - sigma_t^2
+    alpha_bar_t = 1 - sigma_t**2
+    
+    # Now we need to find individual alphas such that:
+    # alpha_bar_t = prod_{s=0}^t alpha_s
+    # This means: alpha_t = alpha_bar_t / alpha_bar_{t-1}
+    alphas = torch.ones(T)
+    alphas[0] = alpha_bar_t[0]  # First alpha is just the first alpha_bar
+    
+    for t in range(1, T):
+        if alpha_bar_t[t-1] > 0:
+            alphas[t] = alpha_bar_t[t] / alpha_bar_t[t-1]
+        else:
+            # Handle edge case where alpha_bar_{t-1} is very small
+            alphas[t] = alpha_bar_t[t]
+    
+    # For W₂ geodesic, we need to be very careful about clamping
+    # The initial alpha should be very close to 1, so we can't clamp too aggressively
+    # Only clamp if the value is outside a reasonable range
+    alphas = torch.clamp(alphas, min=1e-10, max=1.0)
+    
+    # Convert to betas
+    betas = 1 - alphas
+    
+    return betas
 def get_beta_schedule(T: int, schedule_type: str = "linear", beta_start: float = 1e-4, beta_end: float = 0.02) -> torch.Tensor:
     """Get beta schedule based on the specified type."""
     if schedule_type == "linear":

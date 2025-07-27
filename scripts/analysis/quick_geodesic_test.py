@@ -3,6 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import Dict, Optional
 import json
+import sys
+import os
+
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from geodesic_evaluation import (
     NoiseSchedule, 
@@ -33,7 +38,7 @@ def quick_geodesic_test(n_interpolation_steps: int = 100, n_samples_per_step: in
     data_samples = torch.FloatTensor(data_samples).to(device)
     
     # Define noise schedules to evaluate
-    schedule_types = ["linear", "cosine", "quadratic", "exponential"]
+    schedule_types = ["linear", "cosine", "quadratic", "exponential", "geodesic"]
     T = 1000
     beta_start = 1e-4
     beta_end = 0.02
@@ -135,9 +140,9 @@ def visualize_noise_schedule_comparison():
     beta_start = 1e-4
     beta_end = 0.02
     
-    schedule_types = ["linear", "cosine", "quadratic", "exponential"]
+    schedule_types = ["linear", "cosine", "quadratic", "exponential", "geodesic"]
     
-    plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(15, 10))
     
     for schedule_type in schedule_types:
         noise_schedule = NoiseSchedule(T=T, schedule_type=schedule_type, 
@@ -147,7 +152,7 @@ def visualize_noise_schedule_comparison():
         betas = noise_schedule.betas.cpu().numpy()
         alpha_bars = noise_schedule.alpha_bars.cpu().numpy()
         
-        plt.subplot(2, 2, 1)
+        plt.subplot(2, 3, 1)
         plt.plot(timesteps, betas, label=schedule_type, alpha=0.8)
         plt.title('Beta Schedule')
         plt.xlabel('Timestep')
@@ -155,7 +160,7 @@ def visualize_noise_schedule_comparison():
         plt.legend()
         plt.grid(True, alpha=0.3)
         
-        plt.subplot(2, 2, 2)
+        plt.subplot(2, 3, 2)
         plt.plot(timesteps, alpha_bars, label=schedule_type, alpha=0.8)
         plt.title('Alpha Bar Schedule')
         plt.xlabel('Timestep')
@@ -163,7 +168,7 @@ def visualize_noise_schedule_comparison():
         plt.legend()
         plt.grid(True, alpha=0.3)
         
-        plt.subplot(2, 2, 3)
+        plt.subplot(2, 3, 3)
         plt.plot(timesteps, 1 - alpha_bars, label=schedule_type, alpha=0.8)
         plt.title('Noise Variance Schedule')
         plt.xlabel('Timestep')
@@ -171,13 +176,36 @@ def visualize_noise_schedule_comparison():
         plt.legend()
         plt.grid(True, alpha=0.3)
         
-        plt.subplot(2, 2, 4)
+        plt.subplot(2, 3, 4)
         plt.plot(timesteps, np.sqrt(1 - alpha_bars), label=schedule_type, alpha=0.8)
         plt.title('Noise Standard Deviation Schedule')
         plt.xlabel('Timestep')
         plt.ylabel('sqrt(1 - Alpha Bar)')
         plt.legend()
         plt.grid(True, alpha=0.3)
+        
+        # Add marginal std visualization for geodesic comparison
+        if schedule_type == "geodesic":
+            plt.subplot(2, 3, 5)
+            marginal_std = noise_schedule.get_marginal_std(torch.arange(T, device=noise_schedule.betas.device)).cpu().numpy()
+            plt.plot(timesteps, marginal_std, label='W₂ Geodesic', color='purple', linewidth=2)
+            plt.title('Marginal Standard Deviation (W₂ Geodesic)')
+            plt.xlabel('Timestep')
+            plt.ylabel('Marginal Std')
+            plt.legend()
+            plt.grid(True, alpha=0.3)
+            
+            # Show the theoretical W₂ geodesic path
+            plt.subplot(2, 3, 6)
+            eps = beta_start
+            theoretical_std = (1 - timesteps/T) * eps + (timesteps/T)
+            plt.plot(timesteps, theoretical_std, label='Theoretical W₂', color='red', linestyle='--', linewidth=2)
+            plt.plot(timesteps, marginal_std, label='Implemented W₂', color='purple', linewidth=2)
+            plt.title('W₂ Geodesic Path Comparison')
+            plt.xlabel('Timestep')
+            plt.ylabel('Standard Deviation')
+            plt.legend()
+            plt.grid(True, alpha=0.3)
     
     plt.tight_layout()
     plt.savefig("noise_schedule_comparison.png", dpi=300, bbox_inches='tight')
