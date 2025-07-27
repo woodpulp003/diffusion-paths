@@ -253,6 +253,11 @@ def main():
             all_original_data.append(x0.cpu().numpy())
             if batch_idx >= 0:  # Just get first batch
                 break
+    
+    if not all_original_data:
+        print("No data loaded from test_loader!")
+        return
+    
     all_original_data = np.vstack(all_original_data)
     
     # Initialize metrics storage
