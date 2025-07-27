@@ -20,6 +20,37 @@ def get_linear_beta_schedule(T: int, beta_start: float = 1e-4, beta_end: float =
     return torch.linspace(beta_start, beta_end, T)
 
 
+def get_cosine_beta_schedule(T: int, beta_end: float = 0.02) -> torch.Tensor:
+    """Cosine beta schedule for diffusion process."""
+    steps = torch.linspace(0, torch.pi / 2, T)
+    return beta_end * torch.sin(steps) ** 2
+
+
+def get_quadratic_beta_schedule(T: int, beta_start: float = 1e-4, beta_end: float = 0.02) -> torch.Tensor:
+    """Quadratic beta schedule for diffusion process."""
+    linear_betas = torch.linspace(beta_start, beta_end, T)
+    return linear_betas ** 2
+
+
+def get_exponential_beta_schedule(T: int, beta_start: float = 1e-4, beta_end: float = 0.02) -> torch.Tensor:
+    """Exponential beta schedule for diffusion process."""
+    return torch.exp(torch.linspace(np.log(beta_start), np.log(beta_end), T))
+
+
+def get_beta_schedule(T: int, schedule_type: str = "linear", beta_start: float = 1e-4, beta_end: float = 0.02) -> torch.Tensor:
+    """Get beta schedule based on the specified type."""
+    if schedule_type == "linear":
+        return get_linear_beta_schedule(T, beta_start, beta_end)
+    elif schedule_type == "cosine":
+        return get_cosine_beta_schedule(T, beta_end)
+    elif schedule_type == "quadratic":
+        return get_quadratic_beta_schedule(T, beta_start, beta_end)
+    elif schedule_type == "exponential":
+        return get_exponential_beta_schedule(T, beta_start, beta_end)
+    else:
+        raise ValueError(f"Unknown schedule type: {schedule_type}")
+
+
 def compute_mmd(samples1, samples2, kernel='rbf', gamma=1.0):
     """
     Compute Maximum Mean Discrepancy (MMD) between two sets of samples.
@@ -185,24 +216,15 @@ def main():
     n_samples = 1000
     large_n_samples = 5000  # Larger sample set for robust evaluation
     
-    # Create noise schedule (same as training)
-    betas = get_linear_beta_schedule(T, beta_start=1e-4, beta_end=0.02)
-    alpha = 1. - betas
-    alpha_bar = torch.cumprod(alpha, dim=0)
+    # Find all checkpoint files (including subdirectories for different schedules)
+    checkpoint_files = []
+    checkpoint_dirs = ["checkpoints"] + [f"checkpoints/{d}" for d in os.listdir("checkpoints") if os.path.isdir(f"checkpoints/{d}")]
     
-    # Move to device
-    betas = betas.to(device)
-    alpha_bar = alpha_bar.to(device)
+    for checkpoint_dir in checkpoint_dirs:
+        if os.path.exists(checkpoint_dir):
+            files = glob.glob(f"{checkpoint_dir}/model_epoch_*.pt")
+            checkpoint_files.extend(files)
     
-    # Create noise schedule dict for sampling
-    noise_schedule = {
-        'betas': betas,
-        'alphas': alpha,
-        'alpha_bars': alpha_bar
-    }
-    
-    # Find all checkpoint files
-    checkpoint_files = glob.glob("checkpoints/model_epoch_*.pt")
     checkpoint_files.sort(key=lambda x: int(x.split('_')[-1].split('.')[0]))
     
     if not checkpoint_files:
@@ -253,7 +275,25 @@ def main():
         model.load_state_dict(checkpoint['model_state_dict'])
         model.eval()
         
-        print(f"Testing epoch {epoch:4d} (training loss: {checkpoint['loss']:.6f})...")
+        # Determine schedule type from checkpoint config
+        schedule_type = checkpoint.get('config', {}).get('noise_schedule', {}).get('type', 'linear')
+        print(f"Testing epoch {epoch:4d} (schedule: {schedule_type}, training loss: {checkpoint['loss']:.6f})...")
+        
+        # Create noise schedule based on checkpoint
+        betas = get_beta_schedule(T, schedule_type)
+        alpha = 1. - betas
+        alpha_bar = torch.cumprod(alpha, dim=0)
+        
+        # Move to device
+        betas = betas.to(device)
+        alpha_bar = alpha_bar.to(device)
+        
+        # Create noise schedule dict for sampling
+        noise_schedule = {
+            'betas': betas,
+            'alphas': alpha,
+            'alpha_bars': alpha_bar
+        }
         
         # Test noise prediction
         total_loss = 0.0
@@ -309,6 +349,7 @@ def main():
         # Store metrics
         metrics_entry = {
             'epoch': epoch,
+            'schedule_type': schedule_type,
             'test_loss': avg_loss,
             'training_loss': checkpoint['loss'],
             'mmd_rbf': float(mmd_rbf),
@@ -336,10 +377,10 @@ def main():
     best_mmd_linear_epoch = min(metrics_data, key=lambda x: x['mmd_linear'])
     best_wasserstein_epoch = min(metrics_data, key=lambda x: x['wasserstein_distance'])
     
-    print(f"Best Test Loss: Epoch {best_loss_epoch['epoch']:4d} = {best_loss_epoch['test_loss']:.6f}")
-    print(f"Best MMD (RBF): Epoch {best_mmd_rbf_epoch['epoch']:4d} = {best_mmd_rbf_epoch['mmd_rbf']:.6f}")
-    print(f"Best MMD (Linear): Epoch {best_mmd_linear_epoch['epoch']:4d} = {best_mmd_linear_epoch['mmd_linear']:.6f}")
-    print(f"Best Wasserstein: Epoch {best_wasserstein_epoch['epoch']:4d} = {best_wasserstein_epoch['wasserstein_distance']:.6f}")
+    print(f"Best Test Loss: Epoch {best_loss_epoch['epoch']:4d} ({best_loss_epoch['schedule_type']}) = {best_loss_epoch['test_loss']:.6f}")
+    print(f"Best MMD (RBF): Epoch {best_mmd_rbf_epoch['epoch']:4d} ({best_mmd_rbf_epoch['schedule_type']}) = {best_mmd_rbf_epoch['mmd_rbf']:.6f}")
+    print(f"Best MMD (Linear): Epoch {best_mmd_linear_epoch['epoch']:4d} ({best_mmd_linear_epoch['schedule_type']}) = {best_mmd_linear_epoch['mmd_linear']:.6f}")
+    print(f"Best Wasserstein: Epoch {best_wasserstein_epoch['epoch']:4d} ({best_wasserstein_epoch['schedule_type']}) = {best_wasserstein_epoch['wasserstein_distance']:.6f}")
     
     # Create visualizations and save results
     os.makedirs("test_results", exist_ok=True)
@@ -351,6 +392,7 @@ def main():
     # Save large samples for robust evaluation
     for metrics_entry in metrics_data:
         epoch = metrics_entry['epoch']
+        schedule_type = metrics_entry['schedule_type']
         large_samples = sample_from_model(
             Denoiser().to(device).load_state_dict(
                 torch.load(f"checkpoints/model_epoch_{epoch:04d}.pt", map_location=device)['model_state_dict']
