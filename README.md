@@ -1,153 +1,173 @@
-# Diffusion Paths: 2D GMM Diffusion Model
+# Diffusion Paths: Comprehensive Evaluation and Analysis
 
-A PyTorch implementation of a 2D Gaussian Mixture Model (GMM) diffusion model with support for multiple noise schedules.
+This repository contains a comprehensive evaluation framework for diffusion models with different noise schedules, focusing on both simple and complex datasets.
 
-## Overview
-
-This project implements a Denoising Diffusion Probabilistic Model (DDPM) for generating 2D data from a Gaussian Mixture Model. The model supports multiple noise schedules (linear, cosine, quadratic, exponential) and includes comprehensive evaluation metrics.
-
-## Features
-
-- **Multiple Noise Schedules**: Linear, Cosine, Quadratic, and Exponential beta schedules
-- **Large Batch Training**: Optimized for large batch sizes (1280) with scaled learning rates
-- **Comprehensive Evaluation**: MMD, Wasserstein distance, and test loss metrics
-- **Checkpoint Management**: Automatic checkpoint saving and loading
-- **Visualization**: Sample generation and comparison plots
-
-## Installation
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd diffusion-paths
-```
-
-2. Create a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-## Usage
-
-### Training
-
-Train a model with a specific noise schedule:
-
-```bash
-# Linear schedule (default)
-python train.py --run_name "linear_schedule" --schedule "linear" --epochs 1000 --save_every 10
-
-# Cosine schedule
-python train.py --run_name "cosine_schedule" --schedule "cosine" --epochs 1000 --save_every 10
-
-# Quadratic schedule
-python train.py --run_name "quadratic_schedule" --schedule "quadratic" --epochs 1000 --save_every 10
-
-# Exponential schedule
-python train.py --run_name "exponential_schedule" --schedule "exponential" --epochs 1000 --save_every 10
-```
-
-### Evaluation
-
-Evaluate trained models:
-
-```bash
-# Evaluate all checkpoints
-python test_model.py
-
-# The script will automatically:
-# - Load all checkpoint files
-# - Generate samples from each model
-# - Compute MMD and Wasserstein distances
-# - Create comparison visualizations
-```
-
-## Project Structure
+## 🏗️ Project Structure
 
 ```
 diffusion-paths/
-├── model.py                 # Neural network architecture (Denoiser)
-├── train.py                 # Training script with noise schedule support
-├── test_model.py            # Evaluation script
-├── data/
-│   └── gmm_dataset.py      # GMM data generation
-├── checkpoints/             # Saved model checkpoints
-│   ├── linear_schedule/
-│   ├── cosine_schedule/
-│   ├── quadratic_schedule/
-│   └── exponential_schedule/
-├── test_results/            # Evaluation results and plots
-├── requirements.txt         # Python dependencies
-└── README.md               # This file
+├── data/                          # Data generation and utilities
+│   └── gmm_dataset.py            # Gaussian Mixture Model dataset generation
+├── scripts/                       # Organized script directories
+│   ├── training/                  # Training scripts
+│   │   ├── train.py              # Simple dataset training
+│   │   └── train_complex_dataset.py  # Complex dataset training
+│   ├── evaluation/                # Evaluation scripts
+│   │   ├── test_model.py         # Simple dataset evaluation
+│   │   ├── test_complex_model.py # Complex dataset evaluation
+│   │   └── evaluate_complex_dataset.py  # Complex dataset evaluation
+│   ├── visualization/             # Visualization scripts
+│   │   ├── create_complex_epoch_distributions.py
+│   │   ├── create_complex_side_by_side_plots.py
+│   │   └── complex_evaluation_summary.py
+│   └── analysis/                  # Analysis scripts
+│       ├── complex_geodesic_analysis.py
+│       ├── geodesic_evaluation.py
+│       ├── plot_geodesic_trajectories.py
+│       └── quick_geodesic_test.py
+├── test_results/                  # Simple dataset results
+├── test_results_complex/          # Complex dataset results
+│   ├── epoch_distributions/       # Epoch-by-epoch distribution plots
+│   ├── complex_evaluation_metrics.json
+│   ├── complex_evaluation_metrics.csv
+│   └── [various visualization plots]
+├── checkpoints/                   # Simple dataset model checkpoints
+├── checkpoints_complex/           # Complex dataset model checkpoints
+├── model.py                       # Denoiser model architecture
+├── requirements.txt               # Python dependencies
+└── README.md                     # This file
 ```
 
-## Noise Schedules
+## 🎯 Key Features
 
-The model supports four different noise schedules:
+### 📊 Comprehensive Evaluation
+- **Multiple Noise Schedules**: Linear, Cosine, Quadratic, Exponential
+- **Parallel Processing**: Efficient evaluation with configurable workers
+- **Multiple Metrics**: Test Loss, MMD (RBF & Linear), Wasserstein Distance
+- **Epoch-by-Epoch Analysis**: Detailed progression tracking
 
-1. **Linear**: `β_t = β_start + (β_end - β_start) * t/T`
-2. **Cosine**: `β_t = β_start + (β_end - β_start) * (1 - cos(πt/2T))`
-3. **Quadratic**: `β_t = β_start + (β_end - β_start) * (t/T)²`
-4. **Exponential**: `β_t = exp(log(β_start) + (log(β_end) - log(β_start)) * t/T)`
+### 🔬 Geodesic Analysis
+- **Conditional Geodesic Evaluation**: Measures geodesic properties
+- **Marginal Geodesic Evaluation**: Analyzes marginal distributions
+- **Noise Schedule Comparison**: Comprehensive schedule analysis
 
-## Model Architecture
+### 📈 Visualization
+- **Distribution Plots**: Side-by-side comparisons of learned vs original data
+- **Progression Plots**: Epoch-by-epoch metric progression
+- **Geodesic Plots**: Trajectory and deviation visualizations
+- **Summary Plots**: Comprehensive comparison visualizations
 
-- **Denoiser**: MLP with timestep embedding
-- **Input**: 2D data points + timestep
-- **Output**: Predicted noise
-- **Loss**: MSE between predicted and true noise
+## 🚀 Quick Start
 
-## Evaluation Metrics
+### 1. Setup Environment
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-- **Test Loss**: MSE loss on noise prediction
-- **MMD (RBF)**: Maximum Mean Discrepancy with RBF kernel
-- **Wasserstein Distance**: Earth Mover's Distance
-- **Sample Quality**: Visual comparison with original GMM data
+# Install dependencies
+pip install -r requirements.txt
+```
 
-## Default Configuration
+### 2. Training Models
+```bash
+# Train simple dataset models
+python scripts/training/train.py
 
-- **Batch Size**: 1280 (large batch optimized)
-- **Learning Rate**: 3.16e-5 (scaled for large batch)
-- **Epochs**: 1000
-- **Save Every**: 10 epochs
-- **Noise Steps**: 1000
-- **Data**: 8-component GMM with radius 5.0, std 0.2
+# Train complex dataset models
+python scripts/training/train_complex_dataset.py
+```
 
-## Results
+### 3. Evaluation
+```bash
+# Evaluate simple dataset
+python scripts/evaluation/test_model.py
 
-The evaluation provides comprehensive comparison of different noise schedules:
+# Evaluate complex dataset
+python scripts/evaluation/test_complex_model.py
+```
 
-- **Test Loss**: Measures noise prediction accuracy
-- **Sample Quality**: MMD and Wasserstein metrics for sample distribution
-- **Training Trajectories**: Loss curves over training epochs
-- **Visual Comparisons**: Generated samples vs original data
+### 4. Analysis
+```bash
+# Run geodesic analysis
+python scripts/analysis/complex_geodesic_analysis.py
 
-## Excluded from Git
+# Quick geodesic test
+python scripts/analysis/quick_geodesic_test.py
+```
 
-The following files/directories are excluded from version control:
-- `checkpoints/` - Model checkpoints
-- `test_results/` - Evaluation results
-- `venv/` - Virtual environment
-- `*.pt`, `*.pth` - PyTorch model files
-- `*.png`, `*.jpg` - Generated images
-- `*.npy`, `*.csv`, `*.json` - Data files
-- `__pycache__/` - Python cache
+### 5. Visualization
+```bash
+# Create epoch distribution plots
+python scripts/visualization/create_complex_epoch_distributions.py
 
-## Dependencies
+# Create side-by-side comparisons
+python scripts/visualization/create_complex_side_by_side_plots.py
+```
 
-- PyTorch
-- NumPy
-- Matplotlib
-- Pandas
-- Scikit-learn
-- SciPy
+## 📋 Results Summary
 
-## License
+### Complex Dataset Evaluation Results
+- **Best Overall**: LINEAR schedule (Test Loss: 0.199254)
+- **Best MMD RBF**: LINEAR schedule (0.042255)
+- **Best MMD Linear**: LINEAR schedule (0.048721)
+- **Best Wasserstein**: LINEAR schedule (0.353967)
 
-This project is for educational and research purposes. 
+### Geodesic Analysis Results
+- **Best Overall Geodesic**: LINEAR (0.199254)
+- **Best Conditional**: QUADRATIC (0.042255)
+- **Best Marginal**: LINEAR (0.353967)
+
+## 🔧 Configuration
+
+### Noise Schedules
+- **Linear**: `β_t = β_start + (β_end - β_start) * t/T`
+- **Cosine**: `β_t = β_start + (β_end - β_start) * (1 - cos(πt/2T))`
+- **Quadratic**: `β_t = β_start + (β_end - β_start) * (t/T)²`
+- **Exponential**: `β_t = β_start + (β_end - β_start) * (exp(t/T) - 1)/(e - 1)`
+
+### Evaluation Parameters
+- **Timesteps**: 1000
+- **Beta Range**: 1e-4 to 0.02
+- **Evaluation Samples**: 1000 per epoch
+- **Parallel Workers**: 5 (configurable)
+
+## 📊 Generated Files
+
+### Evaluation Results
+- `complex_evaluation_metrics.json/csv`: Comprehensive evaluation metrics
+- `complex_dataset_summary.csv`: Summary statistics
+- `complex_geodesic_analysis_results.json`: Geodesic analysis results
+
+### Visualizations
+- `epoch_progression_metrics.png`: Metric progression plots
+- `complex_side_by_side_distributions.png`: Distribution comparisons
+- `complex_geodesic_analysis_plots.png`: Geodesic deviation plots
+- `complex_geodesic_comparison.png`: Geodesic comparison
+- `epoch_distributions/`: Individual epoch distribution plots
+
+## 🛠️ Dependencies
+
+- **PyTorch**: Deep learning framework
+- **NumPy**: Numerical computations
+- **Matplotlib**: Plotting and visualization
+- **Pandas**: Data manipulation
+- **Scikit-learn**: Machine learning utilities
+- **SciPy**: Scientific computing
+
+## 📝 Documentation
+
+- `GEODESIC_EVALUATION_README.md`: Detailed geodesic analysis documentation
+- `GEODESIC_RESULTS_SUMMARY.md`: Geodesic analysis results summary
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details. 

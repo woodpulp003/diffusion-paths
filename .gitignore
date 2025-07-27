@@ -28,17 +28,16 @@ ENV/
 env.bak/
 venv.bak/
 
-# PyTorch
+# PyTorch model files
 *.pt
 *.pth
 
-# Checkpoints and model files
+# Checkpoints and model directories
 checkpoints/
+checkpoints_complex/
 checkpoints_large_batch/
-*.pt
-*.pth
 
-# Test results and visualizations
+# Test results (excluding complex results which are important)
 test_results_large_batch/
 *.png
 *.jpg
@@ -85,4 +84,11 @@ Thumbs.db
 .env.local
 .env.development.local
 .env.test.local
-.env.production.local 
+.env.production.local
+
+# Temporary evaluation files
+quick_geodesic_test_results.json
+noise_schedule_comparison_results_fixed.json
+noise_schedule_comparison_results_fixed.csv
+quick_evaluation_summary.csv
+comprehensive_evaluation_summary.csv 
