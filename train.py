@@ -30,14 +30,14 @@ class NoiseSchedule:
             return torch.linspace(self.beta_start, self.beta_end, self.T)
         
         elif self.schedule_type == "cosine":
-            # Cosine schedule: smooth transition with cosine function
-            steps = torch.linspace(0, torch.pi / 2, self.T)
-            return self.beta_end * torch.sin(steps) ** 2
+            # More stable cosine schedule that doesn't start at zero
+            steps = torch.linspace(0, 1, self.T)
+            return self.beta_start + (self.beta_end - self.beta_start) * (1 - torch.cos(steps * torch.pi / 2))
         
         elif self.schedule_type == "quadratic":
-            # Quadratic schedule: faster early noise increase
-            linear_betas = torch.linspace(self.beta_start, self.beta_end, self.T)
-            return linear_betas ** 2
+            # More stable quadratic schedule
+            steps = torch.linspace(0, 1, self.T)
+            return self.beta_start + (self.beta_end - self.beta_start) * (steps ** 2)
         
         elif self.schedule_type == "exponential":
             # Exponential schedule: exponential decay

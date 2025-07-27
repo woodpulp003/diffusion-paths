@@ -1,30 +1,18 @@
-# Diffusion Model Training and Evaluation
+# Diffusion Paths: 2D GMM Diffusion Model
 
-This repository contains a comprehensive implementation of diffusion model training and evaluation on 2D Gaussian Mixture Model (GMM) data, optimized for large batch training.
+A PyTorch implementation of a 2D Gaussian Mixture Model (GMM) diffusion model with support for multiple noise schedules.
+
+## Overview
+
+This project implements a Denoising Diffusion Probabilistic Model (DDPM) for generating 2D data from a Gaussian Mixture Model. The model supports multiple noise schedules (linear, cosine, quadratic, exponential) and includes comprehensive evaluation metrics.
 
 ## Features
 
-- **2D GMM Dataset**: Generate 2D data from a GMM where means are equally spaced on a circle
-- **Large Batch Training**: Optimized for 1280 batch size with appropriate learning rate scaling
-- **Complete DDPM Implementation**: Full diffusion probabilistic model with configurable parameters
-- **Comprehensive Evaluation**: MMD (RBF/Linear), Wasserstein distance, test loss tracking
-- **Visualization Suite**: Individual plots, comparison plots, learning curves
-- **Model Analysis**: Metrics visualization and performance analysis tools
-
-## Project Structure
-
-```
-.
-├── model.py                          # Denoiser model implementation
-├── train.py                          # Training script (large batch optimized)
-├── test_model.py                     # Evaluation script
-├── compare_models.py                 # Model comparison analysis
-├── plot_metrics.py                   # Metrics visualization
-├── data/
-│   └── gmm_dataset.py               # GMM dataset implementation
-├── requirements.txt                  # Python dependencies
-└── README.md                        # This file
-```
+- **Multiple Noise Schedules**: Linear, Cosine, Quadratic, and Exponential beta schedules
+- **Large Batch Training**: Optimized for large batch sizes (1280) with scaled learning rates
+- **Comprehensive Evaluation**: MMD, Wasserstein distance, and test loss metrics
+- **Checkpoint Management**: Automatic checkpoint saving and loading
+- **Visualization**: Sample generation and comparison plots
 
 ## Installation
 
@@ -49,133 +37,117 @@ pip install -r requirements.txt
 
 ### Training
 
-The default configuration uses large batch training for optimal performance:
+Train a model with a specific noise schedule:
 
 ```bash
-python train.py --epochs 1000 --batch_size 1280 --lr 3.16e-5 --save_every 10
-```
+# Linear schedule (default)
+python train.py --run_name "linear_schedule" --schedule "linear" --epochs 1000 --save_every 10
 
-**Default Parameters:**
-- **Batch Size**: 1280 (optimized for large batch training)
-- **Learning Rate**: 3.16e-5 (scaled by √10 for large batch stability)
-- **Epochs**: 1000
-- **Save Frequency**: Every 10 epochs
+# Cosine schedule
+python train.py --run_name "cosine_schedule" --schedule "cosine" --epochs 1000 --save_every 10
+
+# Quadratic schedule
+python train.py --run_name "quadratic_schedule" --schedule "quadratic" --epochs 1000 --save_every 10
+
+# Exponential schedule
+python train.py --run_name "exponential_schedule" --schedule "exponential" --epochs 1000 --save_every 10
+```
 
 ### Evaluation
 
+Evaluate trained models:
+
 ```bash
+# Evaluate all checkpoints
 python test_model.py
+
+# The script will automatically:
+# - Load all checkpoint files
+# - Generate samples from each model
+# - Compute MMD and Wasserstein distances
+# - Create comparison visualizations
 ```
 
-### Visualization
+## Project Structure
 
-#### Metrics Analysis
-```bash
-python plot_metrics.py
 ```
+diffusion-paths/
+├── model.py                 # Neural network architecture (Denoiser)
+├── train.py                 # Training script with noise schedule support
+├── test_model.py            # Evaluation script
+├── data/
+│   └── gmm_dataset.py      # GMM data generation
+├── checkpoints/             # Saved model checkpoints
+│   ├── linear_schedule/
+│   ├── cosine_schedule/
+│   ├── quadratic_schedule/
+│   └── exponential_schedule/
+├── test_results/            # Evaluation results and plots
+├── requirements.txt         # Python dependencies
+└── README.md               # This file
+```
+
+## Noise Schedules
+
+The model supports four different noise schedules:
+
+1. **Linear**: `β_t = β_start + (β_end - β_start) * t/T`
+2. **Cosine**: `β_t = β_start + (β_end - β_start) * (1 - cos(πt/2T))`
+3. **Quadratic**: `β_t = β_start + (β_end - β_start) * (t/T)²`
+4. **Exponential**: `β_t = exp(log(β_start) + (log(β_end) - log(β_start)) * t/T)`
 
 ## Model Architecture
 
-The diffusion model uses a simple MLP-based denoiser:
-
-- **Input**: 2D coordinates + timestep embedding
-- **Architecture**: 3-layer MLP (128 → 128 → 2)
-- **Timestep Embedding**: Sinusoidal positional encoding
-- **Noise Schedule**: Linear beta schedule (T=1000)
-
-## Dataset
-
-The GMM dataset generates 2D data points distributed in clusters around a circle:
-
-- **Components**: 8 Gaussian components
-- **Radius**: 5.0 (circle radius)
-- **Standard Deviation**: 0.2 (component spread)
-- **Samples**: 10,000 training samples
+- **Denoiser**: MLP with timestep embedding
+- **Input**: 2D data points + timestep
+- **Output**: Predicted noise
+- **Loss**: MSE between predicted and true noise
 
 ## Evaluation Metrics
 
-### Quantitative Metrics
-- **MMD (RBF)**: Maximum Mean Discrepancy with RBF kernel
-- **MMD (Linear)**: Maximum Mean Discrepancy with linear kernel
-- **Wasserstein Distance**: Earth mover's distance
 - **Test Loss**: MSE loss on noise prediction
-- **Sample Statistics**: Range, standard deviation of generated samples
+- **MMD (RBF)**: Maximum Mean Discrepancy with RBF kernel
+- **Wasserstein Distance**: Earth Mover's Distance
+- **Sample Quality**: Visual comparison with original GMM data
 
-### Visualization
-- **Individual Plots**: Per-epoch sample distributions
-- **Comparison Plots**: Side-by-side model comparisons
-- **Learning Curves**: Metric evolution over training
-- **Distribution Analysis**: Sample quality assessment
+## Default Configuration
 
-## Training Configuration
-
-### Large Batch Training (Default)
-- **Batch Size**: 1280
-- **Learning Rate**: 3.16e-5 (scaled by √10)
+- **Batch Size**: 1280 (large batch optimized)
+- **Learning Rate**: 3.16e-5 (scaled for large batch)
 - **Epochs**: 1000
-- **Save Frequency**: Every 10 epochs
-- **Optimization**: Adam optimizer with large batch stability
+- **Save Every**: 10 epochs
+- **Noise Steps**: 1000
+- **Data**: 8-component GMM with radius 5.0, std 0.2
 
 ## Results
 
-The project includes comprehensive evaluation of the large batch training configuration:
+The evaluation provides comprehensive comparison of different noise schedules:
 
-### Performance Analysis
-- **Convergence Speed**: Analysis of training dynamics
-- **Final Quality**: Best-performing model identification
-- **Stability**: Coefficient of variation analysis
-- **Sample Quality**: Distribution matching metrics
+- **Test Loss**: Measures noise prediction accuracy
+- **Sample Quality**: MMD and Wasserstein metrics for sample distribution
+- **Training Trajectories**: Loss curves over training epochs
+- **Visual Comparisons**: Generated samples vs original data
 
-### Key Benefits
-- **Large Batch Efficiency**: Better gradient estimates with 10x batch size
-- **Stable Training**: Proper learning rate scaling prevents divergence
-- **Comprehensive Evaluation**: Multiple metrics for thorough analysis
-- **Reproducible Results**: Deterministic training with proper seeding
+## Excluded from Git
 
-## File Organization
-
-### Excluded from Git
-- `checkpoints/`: Model checkpoints (large files)
-- `test_results/`: Evaluation results and plots
-- `venv/`: Virtual environment
-- `*.npy`, `*.png`, `*.csv`: Data and visualization files
-
-### Included in Git
-- All Python source code
-- Configuration files
-- Documentation
-- Requirements specification
+The following files/directories are excluded from version control:
+- `checkpoints/` - Model checkpoints
+- `test_results/` - Evaluation results
+- `venv/` - Virtual environment
+- `*.pt`, `*.pth` - PyTorch model files
+- `*.png`, `*.jpg` - Generated images
+- `*.npy`, `*.csv`, `*.json` - Data files
+- `__pycache__/` - Python cache
 
 ## Dependencies
 
-- **PyTorch**: Deep learning framework
-- **NumPy**: Numerical computing
-- **Matplotlib**: Visualization
-- **Pandas**: Data analysis
-- **Scikit-learn**: Machine learning utilities
-- **SciPy**: Scientific computing
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+- PyTorch
+- NumPy
+- Matplotlib
+- Pandas
+- Scikit-learn
+- SciPy
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Citation
-
-If you use this code in your research, please cite:
-
-```bibtex
-@misc{diffusion_paths_2024,
-  title={Diffusion Model Training and Evaluation on 2D GMM Data},
-  author={Your Name},
-  year={2024},
-  url={https://github.com/yourusername/diffusion-paths}
-}
-``` 
+This project is for educational and research purposes. 
