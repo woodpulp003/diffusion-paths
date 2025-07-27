@@ -179,9 +179,9 @@ def main():
     
     print(f"Using device: {device}")
     
-    # Test parameters
+    # Test parameters (using large batch defaults)
     T = 1000
-    batch_size = 128
+    batch_size = 1280  # Large batch default
     n_samples = 1000
     large_n_samples = 5000  # Larger sample set for robust evaluation
     
